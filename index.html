@@ -3507,37 +3507,38 @@
   </script>
   <script>
 /* ============================================================
-   NOCTIS PUBLIC WEBSITE — Supabase Integration
+   NOCTIS PUBLIC WEBSITE — Supabase Integration (FIXED)
    ============================================================ */
-
-// ⬇️⬇️⬇️ REPLACE THESE 2 LINES WITH YOUR KEYS FROM SUPABASE ⬇️⬇️⬇️
 const SUPABASE_URL = 'https://fdvjfhdqdtfdkzjjupdp.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkdmpmaGRxZHRmZGt6amp1cGRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNzIyOTUsImV4cCI6MjEwNTc0ODI5NX0.T1B2QNiQCke1xoBfbIqGidwGoRaAtICW-ygbeP1DMdU';
-// ⬆️⬆️⬆️ DO NOT EDIT ANYTHING BELOW THIS LINE ⬆️⬆️⬆️
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+const starSvg = (filled) => `<svg viewBox="0 0 24 24" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>`;
+function renderStars(n) { let o = ''; for (let i = 1; i <= 5; i++) o += starSvg(i <= n); return o; }
+function esc(s) { const d = document.createElement('div'); d.textContent = String(s ?? ''); return d.innerHTML; }
+
 async function loadHero() {
-  const { data } = await sb.from('site_settings').select('content').eq('section', 'hero').eq('status', 'published').maybeSingle();
+  const { data, error } = await sb.from('site_settings').select('content').eq('section', 'hero').eq('status', 'published').maybeSingle();
+  if (error) { console.warn('[hero]', error.message); return; }
   if (!data || !data.content) return;
   const c = data.content;
-  const eyebrow = document.querySelector('.hero-eyebrow span');
-  if (eyebrow && c.eyebrow) eyebrow.textContent = c.eyebrow;
   const h1 = document.querySelector('.hero h1');
   if (h1 && c.headline) {
     const lines = c.headline.split('\n').filter(l => l.trim());
-    h1.innerHTML = lines.map(l => `<span class="line"><span>${l}</span></span>`).join('');
+    h1.innerHTML = lines.map(l => `<span class="line"><span>${esc(l)}</span></span>`).join('');
   }
   const lede = document.querySelector('.hero-lede');
   if (lede && c.description) lede.textContent = c.description;
   const price = document.querySelector('.hero-price');
-  if (price && c.price) price.innerHTML = `<small>Starting from</small> ${c.price}`;
+  if (price && c.price) price.innerHTML = `<small>Starting from</small> ${esc(c.price)}`;
   const location = document.querySelector('.hero-location span');
   if (location && c.location) location.textContent = c.location;
 }
 
 async function loadAbout() {
-  const { data } = await sb.from('site_settings').select('content').eq('section', 'about').eq('status', 'published').maybeSingle();
+  const { data, error } = await sb.from('site_settings').select('content').eq('section', 'about').eq('status', 'published').maybeSingle();
+  if (error) { console.warn('[about]', error.message); return; }
   if (!data || !data.content) return;
   const c = data.content;
   const story = document.querySelector('.about-copy p');
@@ -3547,7 +3548,8 @@ async function loadAbout() {
 }
 
 async function loadServices() {
-  const { data } = await sb.from('services').select('*').eq('status', 'published').order('display_order');
+  const { data, error } = await sb.from('services').select('*').eq('status', 'published').order('display_order');
+  if (error) { console.warn('[services]', error.message); return; }
   if (!data || !data.length) return;
   const container = document.querySelector('.service-list');
   if (!container) return;
@@ -3555,98 +3557,132 @@ async function loadServices() {
     <article class="service-row">
       <div class="service-row-head">
         <span class="service-num">${String(i + 1).padStart(2, '0')}</span>
-        <span class="service-name">${s.name || ''}</span>
+        <span class="service-name">${esc(s.name)}</span>
       </div>
-      <p class="service-desc">${s.short_description || ''}</p>
+      <p class="service-desc">${esc(s.short_description)}</p>
     </article>
   `).join('');
 }
 
 async function loadWork() {
-  const { data } = await sb.from('portfolio_projects').select('*').eq('status', 'published').order('display_order');
+  const { data, error } = await sb.from('portfolio_projects').select('*').eq('status', 'published').order('display_order');
+  if (error) { console.warn('[work]', error.message); return; }
   if (!data || !data.length) return;
   const container = document.querySelector('.projects');
   if (!container) return;
   container.innerHTML = data.map((p, i) => `
     <article class="project ${i % 2 ? 'flip' : ''}">
       <div class="project-media">
-        <a href="${p.project_url || '#'}" target="_blank" rel="noopener">
-          ${p.image_url ? `<img src="${p.image_url}" alt="${p.title || ''}" loading="lazy">` : ''}
+        <a href="${esc(p.project_url || '#')}" target="_blank" rel="noopener" style="display:block">
+          ${p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(p.title)}" loading="lazy">` : ''}
         </a>
       </div>
       <div class="project-body">
         <span class="project-index">${String(i + 1).padStart(2, '0')} / ${String(data.length).padStart(2, '0')}</span>
-        <span class="project-cat">${p.category || ''}</span>
-        <h3 class="project-title">${p.title || ''}</h3>
-        <p class="project-text">${p.short_description || ''}</p>
-        <a href="${p.project_url || '#'}" target="_blank" rel="noopener" class="project-link">VIEW PROJECT →</a>
+        <span class="project-cat">${esc(p.category)}</span>
+        <h3 class="project-title">${esc(p.title)}</h3>
+        <p class="project-text">${esc(p.short_description)}</p>
+        <a href="${esc(p.project_url || '#')}" target="_blank" rel="noopener" class="project-link">VIEW PROJECT →</a>
       </div>
     </article>
   `).join('');
 }
 
 async function loadReviews() {
-  const { data } = await sb.from('reviews').select('*').eq('status', 'approved').order('created_at', { ascending: false });
-  if (!data) return;
-  const grid = document.querySelector('#reviewsGrid');
+  const { data, error } = await sb.from('reviews').select('*').eq('status', 'approved').order('created_at', { ascending: false });
+  if (error) { console.warn('[reviews]', error.message); return; }
+
+  const grid = document.getElementById('reviewGrid');
+  const avgScore = document.getElementById('avgScore');
+  const avgCount = document.getElementById('avgCount');
+  const avgStars = document.getElementById('avgStars');
+
   if (!grid) return;
-  if (!data.length) {
-    grid.innerHTML = '<div class="review-empty">No public reviews yet.</div>';
+
+  if (!data || !data.length) {
+    grid.innerHTML = '<div class="review-empty">No public reviews yet. Be the first to share your experience.</div>';
+    if (avgScore) avgScore.innerHTML = '0.0<small>/5</small>';
+    if (avgCount) avgCount.textContent = 'Based on 0 reviews';
+    if (avgStars) { avgStars.innerHTML = renderStars(0); avgStars.style.color = 'var(--muted)'; }
     return;
   }
+
   grid.innerHTML = data.map(r => {
     const initials = (r.name || '?').split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
-    const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
     const date = new Date(r.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long' });
-    const avatar = r.photo_url 
-      ? `<div class="review-avatar"><img src="${r.photo_url}" alt=""></div>`
-      : `<div class="review-avatar">${initials}</div>`;
+    const avatar = r.photo_url
+      ? `<div class="avatar"><img src="${esc(r.photo_url)}" alt="" loading="lazy"></div>`
+      : `<div class="avatar">${esc(initials)}</div>`;
+    const meta = [r.business, r.location].filter(Boolean).join(' · ');
     return `
-      <div class="review-card">
-        <div class="review-header">${avatar}<div><div class="review-name">${r.name}</div><div class="review-date">${date}</div></div></div>
-        <div class="review-stars">${stars}</div>
-        <div class="review-text">${r.comment || ''}</div>
-      </div>
+      <article class="review-card">
+        <div class="review-head">
+          ${avatar}
+          <div class="review-who">
+            <span class="review-name">${esc(r.name)}</span>
+            <span class="review-date">${date}</span>
+          </div>
+        </div>
+        <div class="stars" aria-label="${r.rating} out of 5">${renderStars(r.rating || 0)}</div>
+        <p class="review-text">${esc(r.comment)}</p>
+        ${meta ? `<div class="review-foot">${esc(meta)}</div>` : ''}
+      </article>
     `;
   }).join('');
 
   const avg = data.reduce((s, r) => s + (r.rating || 0), 0) / data.length;
-  const scoreEl = document.getElementById('summaryScore');
-  const countEl = document.getElementById('summaryCount');
-  const starsEl = document.getElementById('summaryStars');
-  if (scoreEl) scoreEl.textContent = avg.toFixed(1);
-  if (countEl) countEl.textContent = `Based on ${data.length} review${data.length === 1 ? '' : 's'}`;
-  if (starsEl) starsEl.textContent = '★'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg));
+  if (avgScore) avgScore.innerHTML = `${avg.toFixed(1)}<small>/5</small>`;
+  if (avgCount) avgCount.textContent = `Based on ${data.length} review${data.length === 1 ? '' : 's'}`;
+  if (avgStars) {
+    avgStars.innerHTML = renderStars(Math.round(avg));
+    avgStars.style.color = 'var(--orange)';
+  }
 }
 
 async function loadPricing() {
-  const { data } = await sb.from('pricing_packages').select('*').eq('status', 'published').order('display_order');
+  const { data, error } = await sb.from('pricing_packages').select('*').eq('status', 'published').order('display_order');
+  if (error) { console.warn('[pricing]', error.message); return; }
   if (!data || !data.length) return;
   const container = document.querySelector('.pricing-grid');
   if (!container) return;
   container.innerHTML = data.map(p => `
-    <div class="price-card">
-      <span class="price-name">${p.name || ''}</span>
-      <div class="price-amount">₹${p.price || ''}<small>Starting from</small></div>
+    <article class="price-card">
+      <span class="price-name">${esc(p.name)}</span>
+      <div class="price-amount">₹${esc(p.price)}<small>Starting from</small></div>
       <ul class="price-features">
-        ${(p.features || []).map(f => `<li>${f}</li>`).join('')}
+        ${(p.features || []).map(f => `<li>${esc(f)}</li>`).join('')}
       </ul>
       <a href="#contact" class="btn btn-ghost btn-block">Get Started →</a>
-    </div>
+    </article>
   `).join('');
 }
 
 async function loadFaq() {
-  const { data } = await sb.from('faqs').select('*').eq('status', 'published').order('display_order');
+  const { data, error } = await sb.from('faqs').select('*').eq('status', 'published').order('display_order');
+  if (error) { console.warn('[faq]', error.message); return; }
   if (!data || !data.length) return;
   const container = document.querySelector('.faq-list');
   if (!container) return;
   container.innerHTML = data.map(f => `
     <div class="faq-item">
-      <button class="faq-q" aria-expanded="false">${f.question || ''}<span class="faq-icon"></span></button>
-      <div class="faq-a"><p>${f.answer || ''}</p></div>
+      <button class="faq-q" aria-expanded="false">${esc(f.question)}<span class="faq-icon" aria-hidden="true"></span></button>
+      <div class="faq-a"><p>${esc(f.answer)}</p></div>
     </div>
   `).join('');
+  container.querySelectorAll('.faq-item').forEach(item => {
+    const q = item.querySelector('.faq-q');
+    q.addEventListener('click', () => {
+      const open = item.classList.contains('open');
+      container.querySelectorAll('.faq-item').forEach(i => {
+        i.classList.remove('open');
+        i.querySelector('.faq-q').setAttribute('aria-expanded', 'false');
+      });
+      if (!open) {
+        item.classList.add('open');
+        q.setAttribute('aria-expanded', 'true');
+      }
+    });
+  });
 }
 
 (async function init() {
@@ -3657,6 +3693,6 @@ async function loadFaq() {
     console.error('❌ Load error:', err);
   }
 })();
-</script>
+    </script>
 </body>
 </html>
